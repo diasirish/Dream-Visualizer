@@ -1,10 +1,10 @@
 import os
 
+import whisper
 import openai
 from openai import OpenAI
-import whisper
 
-from utils import extract_scenes
+from utils import extract_scenes, download_image_from_URL
 
 
 def audio_to_text(model_name='whisper', audio_file_path='audio_files/test_3.m4a'):
@@ -25,7 +25,7 @@ def audio_to_text(model_name='whisper', audio_file_path='audio_files/test_3.m4a'
         return None
 
 
-def text_to_frames(full_dream, LLM_model, LLM_type="API"):
+def text_to_frames(full_dream, LLM_model, LLM_type="OpenAI_API"):
     """Divides the whole dream into specific frames and fine-tunes these to be used as a good prompt for the image generation step.
     Inputs
         full_dream (str) : a full dream description
@@ -33,9 +33,9 @@ def text_to_frames(full_dream, LLM_model, LLM_type="API"):
         model (str) : a type of model 
         model_size (str) : a size of a model
     """
-    if LLM_type == "API":
+    if LLM_type == "OpenAI_API":
         openai.api_key = os.getenv("OPENAI_API_KEY")
-        client = OpenAI()
+        client_OpenAI = OpenAI()
 
         # TODO: Figure out a way to pass the prompt with a link to full_dream from the main function
         prompt = f"""
@@ -46,7 +46,7 @@ def text_to_frames(full_dream, LLM_model, LLM_type="API"):
         Each scene should be detailed enough to serve as a prompt for an image generation model. Stylistically make it as realistic and as HD as possible to create vivid and realistic images.
         """
 
-        completion = client.chat.completions.create(
+        completion = client_OpenAI.chat.completions.create(
             model=LLM_model,
             messages=[
                 {"role": "system", "content": "You are a creative assistant that helps to create detailed image descriptions to be used as prompts."},
@@ -63,6 +63,27 @@ def text_to_frames(full_dream, LLM_model, LLM_type="API"):
         ...
     
     return dream_sequences_dict
+
+def frame_to_image(img_gen_type='OpenAI_API', model='dall-e-3', prompt='test',
+                   frame_num=0):
+    """
+    Creates image from the prompt provided
+    """
+    if img_gen_type == 'OpenAI_API':
+        if 'client_OpenAI' not in locals():
+            openai.api_key = os.getenv("OPENAI_API_KEY")
+            client_OpenAI = OpenAI()
+        
+        response = client_OpenAI.images.generate(
+            model = model,
+            prompt = prompt,
+            size = '1024x1024',
+            quality = 'standard',
+            n=1,
+        )   
+
+        image_url = response.data[0].url
+        download_image_from_URL(image_url, img_num=frame_num)
 
 
 def main():
@@ -86,9 +107,11 @@ def main():
         print("No dream was captured, try again...")
         exit()
 
-
     dream_sequences_dict = text_to_frames(full_dream=dream_description_text, LLM_model=LLM_MODEL)
-    print(dream_sequences_dict)
+    
+    for key in dream_sequences_dict:
+        prompt = dream_sequences_dict[key]
+        frame_to_image(prompt=prompt, frame_num=key)
 
 
 if __name__ == "__main__":
