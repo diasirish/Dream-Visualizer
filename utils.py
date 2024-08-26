@@ -25,7 +25,7 @@ def download_image_from_URL(image_url, img_path = 'generated_dreams', img_num=0,
         with open(f"{img_path}/{recent_folder}/dream_frame_{img_num}.jpg", "wb") as file:
             # Write the content of the response to the file
             file.write(response.content)
-        print(f"Dream image {img_num} was successfully downloaded and saved.")
+        print(f"Dream scene {img_num} was successfully downloaded and saved.")
     else:
         print(f"Failed to retrieve the image. Status code: {response.status_code}")
 
