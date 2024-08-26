@@ -1,11 +1,22 @@
 import os
+from utils import extract_scenes, download_image_from_URL
 
+#importing local models
 import whisper
+
+#importing API libraries
 import openai
 from openai import OpenAI
 
-from utils import extract_scenes, download_image_from_URL
-
+""" 
+    TODO List:
+    1. Create an option to caputere live recodring
+    2. Fine-Tune prompt generating LLM to have dreams in consistent style
+    3. Create an option to pass the prompt before the text_to_frames function
+    4. Create local Stable Diffusion image generator
+    5. Create local LLama 3 LLM to create frames
+    6. Create directories for each dream sequence (not all of htem in the example folder)
+"""
 
 def audio_to_text(model_name='whisper', audio_file_path='audio_files/test_3.m4a'):
     """Transcribes audio into a text.
@@ -36,7 +47,7 @@ def text_to_frames(full_dream, LLM_model, LLM_type="OpenAI_API"):
     if LLM_type == "OpenAI_API":
         openai.api_key = os.getenv("OPENAI_API_KEY")
         client_OpenAI = OpenAI()
-
+        # TODO: Fine-Tune the dream prompt generator to have dreams in similar style
         # TODO: Figure out a way to pass the prompt with a link to full_dream from the main function
         prompt = f"""
         I have a dream description: "{full_dream}". 
@@ -59,6 +70,7 @@ def text_to_frames(full_dream, LLM_model, LLM_type="OpenAI_API"):
         print(f"OpenAI {LLM_model} returned: {completion.choices[0].message}")
         dream_sequences_dict = extract_scenes(completion.choices[0].message.content)
     else:
+        print("No other modules are yet implemented. Use OpenAI's GPT3.5 by settin model_name='gpt-3.5-turbo' & img_gen_type='OpenAI_API'")
         # TODO: create a local implementation of the LLM image prompts generator
         ...
     
@@ -85,20 +97,28 @@ def frame_to_image(img_gen_type='OpenAI_API', model='dall-e-3', prompt='test',
         image_url = response.data[0].url
         download_image_from_URL(image_url, img_num=frame_num)
 
+    else:
+        print("No other modules are yet implemented. Use OpenAI's Dall-e 3 by settin model_name='dall-e-3' & img_gen_type='OpenAI_API'")
+        ### TODO: Create a local implementation of the model Stable Diffusion
+        ...
 
 def main():
     """Main function that runs the whole dream generation sequence"""
    
-    FORMAT = 'pre_recorded' # or "live_recording"    
+    DREAM_FORMAT = 'pre_recorded' # or "live_recording"    
     MODEL_AUTOMATIC_SPEECH_RECOGNITION = 'whisper'
     LLM_MODEL = "gpt-3.5-turbo"
+    LLM_TYPE = 'OpenAI_API'
+    GEN_MODEL = 'dall-e-3'
+    GEN_TYPE = 'OpenAI_API'
 
-    if FORMAT == 'live_recording':
+
+    if DREAM_FORMAT == 'live_recording':
         # TODO: add option to capture live recording and store it into a file
         # or should I pass it directly into the whisper model???
         ...
     else:
-        AUDIO_FILE_PATH = 'audio_files/test_3.m4a'
+        AUDIO_FILE_PATH = 'audio_files/test_4.m4a'
 
     dream_description_text = audio_to_text(model_name=MODEL_AUTOMATIC_SPEECH_RECOGNITION,
                                            audio_file_path=AUDIO_FILE_PATH)
@@ -107,11 +127,11 @@ def main():
         print("No dream was captured, try again...")
         exit()
 
-    dream_sequences_dict = text_to_frames(full_dream=dream_description_text, LLM_model=LLM_MODEL)
+    dream_sequences_dict = text_to_frames(full_dream=dream_description_text, LLM_type=LLM_TYPE, LLM_model=LLM_MODEL)
     
     for key in dream_sequences_dict:
         prompt = dream_sequences_dict[key]
-        frame_to_image(prompt=prompt, frame_num=key)
+        frame_to_image(img_gen_type=GEN_TYPE, model=GEN_MODEL, prompt=prompt, frame_num=key)
 
 
 if __name__ == "__main__":

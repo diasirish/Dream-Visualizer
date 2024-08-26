@@ -20,11 +20,12 @@ def download_image_from_URL(image_url, img_path = 'generated_dreams', img_num=0,
     # Check if the request was successful
     if response.status_code == 200:
         # Open a file in binary write mode
+        #TODO: Create an option to make a directory based on the date the dream was created.
         os.makedirs(f"{img_path}/{recent_folder}", exist_ok=True)
         with open(f"{img_path}/{recent_folder}/dream_frame_{img_num}.jpg", "wb") as file:
             # Write the content of the response to the file
             file.write(response.content)
-        print(f"Image number_{img_num} was successfully downloaded and saved.")
+        print(f"Dream image {img_num} was successfully downloaded and saved.")
     else:
         print(f"Failed to retrieve the image. Status code: {response.status_code}")
 
